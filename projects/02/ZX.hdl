@@ -1,0 +1,11 @@
+CHIP ZX {
+    IN  
+        x[16],      
+        zx; // zero the x input?
+
+    OUT 
+        out[16]; // 16-bit output
+
+    PARTS:
+    Mux16(a=x, b=false, sel=zx, out=out);
+}
