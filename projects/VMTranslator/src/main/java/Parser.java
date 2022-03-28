@@ -1,5 +1,6 @@
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.util.Arrays;
 import java.util.Scanner;
 
 public class Parser {
@@ -27,16 +28,25 @@ public class Parser {
     public void advance() {
         String currentLine = this.scanner.nextLine().trim();
         isComment = currentLine.startsWith("//") || currentLine.length() == 0;
-        String[] elements = currentLine.split(" ");
-        currentCommand = elements[0];
-        commandType = switch (currentCommand) {
-            case "push" -> CommandType.C_PUSH;
-            case "pop" -> CommandType.C_POP;
-            case "add", "sub", "neg", "eq", "gt", "lt", "and", "or", "not" -> CommandType.C_ARITHMETIC;
-            default -> CommandType.C_RETURN;
-        };
-        determineArg1(elements);
-        determineArg2(elements);
+        if (!isComment) {
+            String[] elements = currentLine.split(" ");
+            Arrays.setAll(elements, i -> elements[i].trim());
+            currentCommand = elements[0];
+            commandType = switch (currentCommand) {
+                case "push" -> CommandType.C_PUSH;
+                case "pop" -> CommandType.C_POP;
+                case "add", "sub", "neg", "eq", "gt", "lt", "and", "or", "not" -> CommandType.C_ARITHMETIC;
+                case "label" -> CommandType.C_LABEL;
+                case "if-goto" -> CommandType.C_IF;
+                case "goto" -> CommandType.C_GOTO;
+                case "function" -> CommandType.C_FUNCTION;
+                case "return" -> CommandType.C_RETURN;
+                case "call" -> CommandType.C_CALL;
+                default -> throw new RuntimeException("Parser, unhandled Command: " + currentCommand);
+            };
+            determineArg1(elements);
+            determineArg2(elements);
+        }
     }
 
     private void determineArg1(String[] elements) {
