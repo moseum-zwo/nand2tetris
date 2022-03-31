@@ -86,7 +86,6 @@ public class CompilationEngine {
     }
 
     private Token nextToken() {
-        System.out.println(pointer);
         return tokens.get(pointer++);
     }
 
