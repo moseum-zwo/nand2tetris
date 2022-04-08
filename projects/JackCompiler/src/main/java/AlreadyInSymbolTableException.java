@@ -1,2 +1,6 @@
-package PACKAGE_NAME;public class AlreadyInSymbolTableException {
+public class AlreadyInSymbolTableException extends Exception {
+
+    public AlreadyInSymbolTableException(String message) {
+        super(message);
+    }
 }

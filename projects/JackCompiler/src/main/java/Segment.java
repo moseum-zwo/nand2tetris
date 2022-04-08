@@ -1,2 +1,3 @@
-package PACKAGE_NAME;public enum Segment {
+public enum Segment {
+    CONST, ARG, LOCAL, STATIC, THIS, THAT, POINTER, TEMP;
 }
