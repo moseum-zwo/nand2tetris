@@ -1,8 +1,5 @@
 import org.junit.jupiter.api.Test;
-import token.Identifier;
-import token.Keyword;
-import token.Symbol;
-import token.Token;
+import token.*;
 
 import java.io.File;
 import java.io.IOException;
@@ -16,7 +13,22 @@ class CompilationEngineTest {
         List<Token> tokens = new ArrayList<>(List.of(new Keyword("class"), new Identifier("MyClass"), new Symbol("{"),
                 new Keyword("field"), new Keyword("int"), new Identifier("x"), new Symbol(","), new Identifier("y"), new Symbol(";"),
                 new Symbol("}")));
-        CompilationEngine compilationEngine = new CompilationEngine(new File("src/test/resources/outputTemp.xml"), tokens);
+        CompilationEngine compilationEngine = new CompilationEngine(new File("src/test/resources/outputTemp"), tokens);
+        compilationEngine.writeXMLFile();
+    }
+
+    @Test
+    void testCodeWriting() throws IOException {
+        List<Token> tokens = new ArrayList<>(List.of(new Keyword("class"), new Identifier("Test"), new Symbol("{"),
+                new Keyword("field"), new Keyword("int"), new Identifier("x"), new Symbol(","), new Identifier("y"), new Symbol(","), new Identifier("z"), new Symbol(";"),
+                new Keyword("method"), new Keyword("int"), new Identifier("testMethod"), new Symbol("("), new Symbol(")"), new Symbol("{"),
+                new Keyword("let"), new Identifier("x"), new Symbol("="), new IntegerConstant("73"), new Symbol(";"),
+                new Keyword("let"), new Identifier("y"), new Symbol("="), new IntegerConstant("75"), new Symbol(";"),
+                new Keyword("let"), new Identifier("z"), new Symbol("="), new IntegerConstant("77"), new Symbol(";"),
+                new Keyword("let"), new Identifier("x"), new Symbol("="), new Identifier("x"), new Symbol("+"), new Identifier("g"), new Symbol("("), new IntegerConstant("2"), new Symbol(","), new Identifier("y"), new Symbol(","), new Symbol("-"), new Identifier("z"), new Symbol(")"), new Symbol("*"), new IntegerConstant("5"), new Symbol(";"),
+                new Symbol("}"),
+                new Symbol("}")));
+        CompilationEngine compilationEngine = new CompilationEngine(new File("src/test/resources/outputTemp"), tokens);
         compilationEngine.writeXMLFile();
     }
 }

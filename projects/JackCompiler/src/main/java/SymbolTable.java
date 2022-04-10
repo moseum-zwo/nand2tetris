@@ -1,6 +1,7 @@
 import java.util.ArrayList;
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.stream.Collectors;
 
 public class SymbolTable {
 
@@ -31,9 +32,17 @@ public class SymbolTable {
     }
 
     public SymbolTableEntry findByName(String name) throws NoSuchElementException {
-        //TODO: When compiling error-free Jack code, each symbol not found in the symbol tables can be assumed to be
+        //When compiling error-free Jack code, each symbol not found in the symbol tables can be assumed to be
         // either a subroutine name or a class name.
         return entries.stream().filter(entry -> entry.getName().equals(name)).findAny().orElseThrow();
+    }
+
+    public int numOfLocalVariables() {
+        return entries.stream().filter(entry -> entry.getKind().equals("var")).toList().size();
+    }
+
+    public int numOfFieldVariables() {
+        return entries.stream().filter(entry -> entry.getKind().equals("field")).toList().size();
     }
 
     public int getAndIncrementVarCounter() {

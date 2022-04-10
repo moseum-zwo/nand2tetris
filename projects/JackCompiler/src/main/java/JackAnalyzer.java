@@ -34,7 +34,7 @@ public class JackAnalyzer {
 
     private static void tokenizeAndParseInputFile(String inputPath, JackTokenizer tokenizer) throws IOException {
         File outputFile;
-        outputFile = new File(inputPath.replace(".jack", ".xml"));
+        outputFile = new File(inputPath.replace(".jack", ""));
         List<Token> tokens = tokenizer.tokenizeFile(new File(inputPath));
         CompilationEngine compilationEngine = new CompilationEngine(outputFile, tokens);
         compilationEngine.writeXMLFile();

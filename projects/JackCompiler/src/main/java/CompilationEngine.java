@@ -10,7 +10,9 @@ import java.util.NoSuchElementException;
 
 public class CompilationEngine {
 
-    private BufferedWriter writer;
+    private BufferedWriter xmlWriter;
+
+    private VMWriter vmWriter;
 
     private List<Token> tokens;
 
@@ -18,19 +20,27 @@ public class CompilationEngine {
 
     private SymbolTable subroutineSymbolTable;
 
+    private final String className;
+
     private int pointer;
 
+    private int labelCount;
+
     public CompilationEngine(File outputFile, List<Token> tokens) throws IOException {
-        this.writer = new BufferedWriter(new FileWriter(outputFile));
+        this.xmlWriter = new BufferedWriter(new FileWriter(outputFile + ".xml"));
+        this.vmWriter = new VMWriter(new File(outputFile + ".vm"));
         this.tokens = tokens;
+        this.className = outputFile.getName();
         this.pointer = 0;
+        this.labelCount = 0;
     }
 
     public void writeXMLFile() throws IOException {
         writeLine("<tokens>");
         compileClassDeclaration();
         writeLine("</tokens>");
-        writer.close();
+        xmlWriter.close();
+        vmWriter.close();
     }
 
     private void compileClassDeclaration() {
@@ -56,32 +66,24 @@ public class CompilationEngine {
     private void checkAndWriteKeyword(String keyword) {
         Token classKeywordToken = nextToken();
         checkToken(classKeywordToken, Keyword.class, keyword);
-        writeTokenToFile(classKeywordToken);
+        writeTokenToXMLFile(classKeywordToken);
     }
 
-    private void writeTokenToFile(Token token) {
+    private void writeTokenToXMLFile(Token token) {
         writeLine(token.getOpeningTag() + " " + token.getValue() + " " + token.getClosingTag());
     }
 
-    private void writeTokenToFileIdentifierUsed(Token varName) {
-        SymbolTableEntry currentEntry;
-        try {
-            currentEntry = subroutineSymbolTable.findByName(varName.getValue());
-        } catch (NoSuchElementException ignored) {
-            try {
-                currentEntry = classSymbolTable.findByName(varName.getValue());
-            } catch (NoSuchElementException e) {
-                throw new NoSuchElementException("Variable is found in neither symbol table.");
-            }
-        }
+    private SymbolTableEntry writeTokenToFileIdentifierUsed(Token varName) {
+        SymbolTableEntry currentEntry = lookForEntryInSymbolTable(varName);
         String sb = varName.getValue() + " | " + "kind: " + currentEntry.getKind() + "; index: " + currentEntry.getIndex() + "; used ";
         writeLine(varName.getOpeningTag() + " " + sb + varName.getClosingTag());
+        return currentEntry;
     }
 
     private void writeLine(String str) {
         try {
-            writer.write(str);
-            writer.newLine();
+            xmlWriter.write(str);
+            xmlWriter.newLine();
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -124,20 +126,48 @@ public class CompilationEngine {
     }
 
     private void compileSubroutineDeclaration() {
+        String subroutineType;
         try {
             //('constructor' | 'function' | 'method')
             Token constructorOrFunctionOrMethod = nextToken();
             checkToken(constructorOrFunctionOrMethod, Keyword.class, "constructor", "function", "method");
-            writeTokenToFile(constructorOrFunctionOrMethod);
+            writeTokenToXMLFile(constructorOrFunctionOrMethod);
+            subroutineType = constructorOrFunctionOrMethod.getValue();
         } catch (UnexpectedTokenException e) {
             throw new UnexpectedTokenException("No more subroutine declarations.");
         }
+
+        //basic technique for accessing object data:
+        // push 8000
+        // pop pointer 0
+        // push 17
+        // pop this 0
+
+        //constructor contract:
+        // (i) arrange memory block to store the new object,
+        // (ii) return its base address to caller (push to stack)
+
+        //How does constructor know about object size? -> consult classSymbolTable and count "field" entries.
+        // How to create space on heap?
+        // push "numOfFieldEntries"
+        // call Memory.alloc 1
+        // pop pointer 0
+
+        //initialize object:
+        // push argument 0
+        // pop this 0
+        // push argument 1
+        // pop this 1
+
+        //return this
+        // push pointer 0
+        // return
 
         //type
         checkAndWriteType("void", "int", "char", "boolean");
 
         //subroutineName
-        checkAndWriteIdentifierSubroutineDeclaration();
+        String functionName = checkAndWriteIdentifierSubroutineDeclaration();
 
         //'('
         checkAndWriteSymbol("(");
@@ -149,7 +179,7 @@ public class CompilationEngine {
         checkAndWriteSymbol(")");
 
         //subroutineBody
-        compileSubroutineBody();
+        compileSubroutineBody(subroutineType, functionName);
     }
 
     private String checkAndWriteType(String... types) {
@@ -161,7 +191,7 @@ public class CompilationEngine {
         } else {
             throw new UnexpectedTokenException("Keyword or Identifier expected.");
         }
-        writeTokenToFile(type);
+        writeTokenToXMLFile(type);
         return type.getValue();
     }
 
@@ -195,10 +225,9 @@ public class CompilationEngine {
         } catch (UnexpectedTokenException e) {
             rollbackToken();
         }
-
     }
 
-    private void compileSubroutineBody() {
+    private void compileSubroutineBody(String subroutineType, String functionName) {
         //'{'
         checkAndWriteSymbol("{");
 
@@ -209,6 +238,29 @@ public class CompilationEngine {
             }
         } catch (UnexpectedTokenException e) {
             rollbackToken();
+        }
+
+        vmWriter.writeFunction(className, functionName, subroutineSymbolTable.numOfLocalVariables());
+
+        switch (subroutineType) {
+            case "constructor" -> {
+                int fields = classSymbolTable.numOfFieldVariables();
+                vmWriter.writeConstructorCode(fields);
+            }
+            case "method" -> {
+                try {
+                    subroutineSymbolTable.addEntryToSymbolTable(new SymbolTableEntry("this",
+                            "argument",
+                            className,
+                            subroutineSymbolTable.getAndIncrementArgCounter())
+                    );
+                } catch (AlreadyInSymbolTableException e) {
+                    e.printStackTrace();
+                }
+                vmWriter.writePush("argument", 0);
+                vmWriter.writePop("pointer", 0);
+            }
+            case "function" -> vmWriter.writePop("temp", 0);
         }
 
         //statements
@@ -245,7 +297,7 @@ public class CompilationEngine {
             //('static' | 'field')
             staticOrField = nextToken();
             checkToken(staticOrField, Keyword.class, "static", "field");
-            writeTokenToFile(staticOrField);
+            writeTokenToXMLFile(staticOrField);
         } catch (UnexpectedTokenException e) {
             throw new UnexpectedTokenException("No more variable declarations.");
         }
@@ -302,7 +354,7 @@ public class CompilationEngine {
     private void checkAndWriteSymbol(String symbol) {
         Token token = nextToken();
         checkToken(token, Symbol.class, symbol);
-        writeTokenToFile(token);
+        writeTokenToXMLFile(token);
     }
 
     private void checkAndWriteNewIdentifier(String type, String kind) {
@@ -328,9 +380,16 @@ public class CompilationEngine {
         writeLine(varName.getOpeningTag() + " " + sb + varName.getClosingTag());
     }
 
-    private void checkAndWriteIdentifierBeingUsed() {
+    private SymbolTableEntry checkAndWriteIdentifierBeingUsed() {
         Token varName = nextToken();
         checkToken(varName, Identifier.class);
+        SymbolTableEntry currentEntry = lookForEntryInSymbolTable(varName);
+        String sb = varName.getValue() + " | " + "kind: " + currentEntry.getKind() + "; index: " + currentEntry.getIndex() + "; used ";
+        writeLine(varName.getOpeningTag() + " " + sb + varName.getClosingTag());
+        return currentEntry;
+    }
+
+    private SymbolTableEntry lookForEntryInSymbolTable(Token varName) {
         SymbolTableEntry currentEntry;
         try {
             currentEntry = subroutineSymbolTable.findByName(varName.getValue());
@@ -341,8 +400,7 @@ public class CompilationEngine {
                 throw new NoSuchElementException("Variable is found in neither symbol table.");
             }
         }
-        String sb = varName.getValue() + " | " + "kind: " + currentEntry.getKind() + "; index: " + currentEntry.getIndex() + "; used ";
-        writeLine(varName.getOpeningTag() + " " + sb + varName.getClosingTag());
+        return currentEntry;
     }
 
     private void checkAndWriteIdentifierClass() {
@@ -353,18 +411,20 @@ public class CompilationEngine {
         classSymbolTable = new SymbolTable();
     }
 
-    private void checkAndWriteIdentifierSubroutineDeclaration() {
+    private String checkAndWriteIdentifierSubroutineDeclaration() {
         Token varName = nextToken();
         checkToken(varName, Identifier.class);
         String sb = varName.getValue() + " | " + "kind: subroutine" + "; defined ";
         writeLine(varName.getOpeningTag() + " " + sb + varName.getClosingTag());
         subroutineSymbolTable = new SymbolTable();
+        return varName.getValue();
     }
 
-    private void checkAndWriteIdentifierSubroutineName() {
+    private String checkAndWriteIdentifierSubroutineName() {
         Token varName = nextToken();
         checkToken(varName, Identifier.class);
-        writeTokenToFile(varName);
+        writeTokenToXMLFile(varName);
+        return varName.getValue();
     }
 
     private void rollbackToken() {
@@ -386,12 +446,23 @@ public class CompilationEngine {
         checkToken(statementKeyword, Keyword.class, "let", "if", "while", "do", "return");
         rollbackToken();
         switch (statementKeyword.getValue()) {
-            case "let": compileLet(); break;
-            case "if": compileIf(); break;
-            case "while": compileWhile(); break;
-            case "do": compileDo(); break;
-            case "return": compileReturn(); break;
-            default: throw new RuntimeException("Unexpected Identifier for statement");
+            case "let":
+                compileLet();
+                break;
+            case "if":
+                compileIf();
+                break;
+            case "while":
+                compileWhile();
+                break;
+            case "do":
+                compileDo();
+                break;
+            case "return":
+                compileReturn();
+                break;
+            default:
+                throw new RuntimeException("Unexpected Identifier for statement");
         }
     }
 
@@ -400,7 +471,7 @@ public class CompilationEngine {
         checkAndWriteKeyword("let");
 
         //varName
-        checkAndWriteIdentifierBeingUsed();
+        SymbolTableEntry entry = checkAndWriteIdentifierBeingUsed();
 
         //('[' expression ']')?
         try {
@@ -424,6 +495,7 @@ public class CompilationEngine {
 
         //';'
         checkAndWriteSymbol(";");
+        vmWriter.writePop(entry.getKind(), entry.getIndex());
     }
 
     private void compileIf() {
@@ -436,17 +508,28 @@ public class CompilationEngine {
         //expression
         compileExpression();
 
+        String ifFalse = "IF_FALSE" + labelCount;
+        String ifTrue = "IF_TRUE" + labelCount;
+        labelCount++;
+        vmWriter.writeArithmetic("not");
+        vmWriter.writeIfGoto(ifFalse);
+
         //')'
         checkAndWriteSymbol(")");
 
         //'{'
         checkAndWriteSymbol("{");
 
-        //statements
+        //statements1
         compileStatements();
 
         //'}'
         checkAndWriteSymbol("}");
+
+        if (peekNextToken().getValue().equals("else")) {
+            vmWriter.writeGoto(ifTrue);
+        }
+        vmWriter.writeLabel(ifFalse);
 
         //('else' '{' statements '}')?
         try {
@@ -458,6 +541,7 @@ public class CompilationEngine {
 
             //statements
             compileStatements();
+            vmWriter.writeLabel(ifTrue);
 
             //'}'
             checkAndWriteSymbol("}");
@@ -470,11 +554,19 @@ public class CompilationEngine {
         //'while'
         checkAndWriteKeyword("while");
 
+        String whileLabel = "WHILE" + labelCount;
+        String endWhileLabel = "END_WHILE" + labelCount;
+        labelCount++;
+        vmWriter.writeLabel(whileLabel);
+
         //'('
         checkAndWriteSymbol("(");
 
         //expression
         compileExpression();
+
+        vmWriter.writeArithmetic("not");
+        vmWriter.writeIfGoto(endWhileLabel);
 
         //')'
         checkAndWriteSymbol(")");
@@ -484,6 +576,9 @@ public class CompilationEngine {
 
         //statements
         compileStatements();
+
+        vmWriter.writeGoto(whileLabel);
+        vmWriter.writeLabel(endWhileLabel);
 
         //'}'
         checkAndWriteSymbol("}");
@@ -498,6 +593,8 @@ public class CompilationEngine {
 
         //';'
         checkAndWriteSymbol(";");
+
+        vmWriter.writePop("temp", 0);
     }
 
     private void compileReturn() {
@@ -511,7 +608,11 @@ public class CompilationEngine {
             } catch (UnexpectedTokenException e) {
                 rollbackToken();
             }
+        } else {
+            vmWriter.writePush("constant", 0);
         }
+
+        vmWriter.writeReturn();
 
         //';'
         checkAndWriteSymbol(";");
@@ -527,10 +628,11 @@ public class CompilationEngine {
                 //op
                 Token op = nextToken();
                 checkToken(op, Symbol.class, "+", "-", "*", "/", "&amp;", "|", "&lt;", "&gt;", "=");
-                writeTokenToFile(op);
+                writeTokenToXMLFile(op);
 
                 //term
                 compileTerm();
+                vmWriter.writeArithmetic(op.getValue());
             }
         } catch (UnexpectedTokenException e) {
             rollbackToken();
@@ -540,30 +642,41 @@ public class CompilationEngine {
     private void compileTerm() {
         //integerConstant | stringConstant | keywordConstant | varName | varName '[' expression ']' | subroutineCall | '(' expression ')' | unaryOp term
         Token token = nextToken();
-        if (token.getClass().equals(IntegerConstant.class) || token.getClass().equals(StringConstant.class)) {
-            writeTokenToFile(token);
-        } else if (token.getClass().equals(Keyword.class) &&
+
+        if (token.getClass().equals(IntegerConstant.class)) {  //integer constant; number
+            writeTokenToXMLFile(token);
+            vmWriter.writePush("constant", Integer.parseInt(token.getValue()));
+        } else if (token.getClass().equals(StringConstant.class)) { //string constant
+            writeTokenToXMLFile(token);
+        } else if (token.getClass().equals(Keyword.class) &&    //keyword constant
                 (token.getValue().equals("true") || token.getValue().equals("false") || token.getValue().equals("null") || token.getValue().equals("this"))) {
-            writeTokenToFile(token);
-        } else if (token.getClass().equals(Symbol.class) && token.getValue().equals("(")) {
-            writeTokenToFile(token);
+            writeTokenToXMLFile(token);
+            vmWriter.writeKeywordConstant(token.getValue());
+        } else if (token.getClass().equals(Symbol.class) && token.getValue().equals("(")) {     //'(' expression ')'
+            writeTokenToXMLFile(token);
 
             compileExpression();
 
             checkAndWriteSymbol(")");
-        } else if (token.getClass().equals(Symbol.class) && (token.getValue().equals("~") || token.getValue().equals("-"))) {
-            writeTokenToFile(token);
+        } else if (token.getClass().equals(Symbol.class)) {     //unary op; "op exp"
+            if (token.getValue().equals("~")) {
+                writeTokenToXMLFile(token);
 
-            compileTerm();
+                compileTerm();
+                vmWriter.writeArithmetic("not");
+            } else if (token.getValue().equals("-")) {
+                writeTokenToXMLFile(token);
+
+                compileTerm();
+                vmWriter.writeArithmetic("neg");
+            }
         } else if (token.getClass().equals(Identifier.class)) {
-            //TODO
             Token nextTokenPeeked = peekNextToken();
             if (nextTokenPeeked.getClass().equals(Symbol.class)) {
-                //subroutineCall
-                if (nextTokenPeeked.getValue().equals("(") || nextTokenPeeked.getValue().equals(".")) {
+                if (nextTokenPeeked.getValue().equals("(") || nextTokenPeeked.getValue().equals(".")) {     //subroutineCall
                     rollbackToken();
                     compileSubroutineCall();
-                } else if (nextTokenPeeked.getValue().equals("[")) {
+                } else if (nextTokenPeeked.getValue().equals("[")) {    //array; varName '[' expression ']'
                     writeTokenToFileIdentifierUsed(token);
 
                     checkAndWriteSymbol("[");
@@ -571,16 +684,19 @@ public class CompilationEngine {
                     compileExpression();
 
                     checkAndWriteSymbol("]");
-                } else {
-                    writeTokenToFileIdentifierUsed(token);
+                } else {        //varName; variable
+                    SymbolTableEntry entry = writeTokenToFileIdentifierUsed(token);
+                    vmWriter.writePush(entry.getKind(), entry.getIndex());
                 }
-            } else {
+            } else {        //varName; variable
                 writeTokenToFileIdentifierUsed(token);
             }
         }
     }
 
     private void compileSubroutineCall() {
+        StringBuilder functionName = new StringBuilder();
+        int argumentCounter = 0;
         //((className | varName) '.')?
         try {
             //(className | varName)
@@ -591,15 +707,32 @@ public class CompilationEngine {
             Token dot = nextToken();
             checkToken(dot, Symbol.class, ".");
 
-            writeTokenToFile(classNameOrVarName);
-            writeTokenToFile(dot);
+            writeTokenToXMLFile(classNameOrVarName);
+            writeTokenToXMLFile(dot);
+
+            //method-call code if object is of different kind.
+            try {
+                SymbolTableEntry entry = lookForEntryInSymbolTable(classNameOrVarName); //is a variable referenced in symbol table -> varName
+                functionName.append(entry.getType()).append(".");
+                argumentCounter++;
+                vmWriter.writePush(entry.getKind(), entry.getIndex());
+            } catch (NoSuchElementException ignored) {
+                //not a variable -> className -> function or constructor
+                functionName.append(classNameOrVarName.getValue()).append(".");
+            }
         } catch (UnexpectedTokenException e) {
             rollbackToken();
             rollbackToken();
+            functionName.append(className).append(".");
+
+            //Push pointer 0, don't forget to pop it to temp 0 if it is actually a function.
+            vmWriter.writePush("pointer", 0);
+            argumentCounter++;
         }
 
         //subroutineName
-        checkAndWriteIdentifierSubroutineName();
+        String s = checkAndWriteIdentifierSubroutineName();
+        functionName.append(s);
 
         //'('
         checkAndWriteSymbol("(");
@@ -607,22 +740,29 @@ public class CompilationEngine {
         //expressionList
         Token firstTokenExpression = peekNextToken();
         if (!firstTokenExpression.getValue().equals(")")) {
-            compileExpressionList();
+            argumentCounter = argumentCounter + compileExpressionList();
         }
 
         //')'
         checkAndWriteSymbol(")");
+
+        vmWriter.writeCall(functionName.toString(), argumentCounter);
     }
 
-    private void compileExpressionList() {
+    private int compileExpressionList() {
         try {
-            compileExpressionListAvailable();
+            return compileExpressionListAvailable();
         } catch (UnexpectedTokenException e) {
             rollbackToken();
         }
+        //no arguments
+        return 0;
     }
 
-    private void compileExpressionListAvailable() {
+    private int compileExpressionListAvailable() {
+
+        int argumentCounter = 1;
+
         //expression
         compileExpression();
 
@@ -634,9 +774,11 @@ public class CompilationEngine {
 
                 //expression
                 compileExpression();
+                argumentCounter++;
             }
         } catch (UnexpectedTokenException e) {
             rollbackToken();
+            return argumentCounter;
         }
     }
 }

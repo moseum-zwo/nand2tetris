@@ -11,40 +11,66 @@ public class VMWriter {
         this.writer = new BufferedWriter(new FileWriter(file));
     }
 
-    public void writePush(Segment segment, int index) {
-        writeLine("push " + segment.toString() +" "+ index);
+    public void writePush(String segment, int index) {
+        if (segment.equals("var")) {
+            segment = "local";
+        } else if (segment.equals("field")) {
+            segment = "this";
+        }
+        writeLine("push " + segment + " " + index);
     }
 
-    public void writePop(Segment segment, int index) {
-        writeLine("pop " + segment.toString() +" "+ index);
+    public void writePop(String segment, int index) {
+        if (segment.equals("var")) {
+            segment = "local";
+        } else if (segment.equals("field")) {
+            segment = "this";
+        }
+        writeLine("pop " + segment + " " + index);
     }
 
-    public void writeArithmatic(String operation) {
-        writeLine(operation);
+    public void writeArithmetic(String operation) {
+        switch (operation) {
+            case "*" -> writeCall("Math.multiply", 2);
+            case "/" -> writeCall("Math.divide", 2);
+            case "+" -> writeLine("add");
+            case "-" -> writeLine("sub");
+            case "&lt;" -> writeLine("lt");
+            case "&gt;" -> writeLine("gt");
+            case "&amp;" -> writeLine("and");
+            case "|" -> writeLine("or");
+            case "=" -> writeLine("eq");
+            case "~" -> writeLine("not");
+            default -> writeLine(operation);
+        }
     }
 
     public void writeLabel(String label) {
-        //TODO
+        writeLine("label " + label);
     }
 
     public void writeGoto(String label) {
-        //TODO
+        writeLine("goto " + label);
     }
 
     public void writeIf(String condition) {
         //TODO
     }
 
-    public void writeCall(String label) {
-        //TODO
+    public void writeIfGoto(String label) {
+        writeLine("if-goto " + label);
     }
 
-    public void writeFunction(String label) {
-        //TODO
+    public void writeCall(String functionName, int numOfArgs) {
+        writeLine("call " + functionName + " " + numOfArgs);
     }
 
-    public void writeReturn(String label) {
-        //TODO
+    public void writeFunction(String className, String functionName, int argCounter) {
+        writeLine("function " + className + "." + functionName + " " + argCounter);
+    }
+
+    public void writeReturn() {
+        writeLine("return");
     }
 
     public void close() throws IOException {
@@ -58,5 +84,25 @@ public class VMWriter {
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    public void writeKeywordConstant(String keywordConstant) {
+        switch (keywordConstant) {
+            case "false" -> writePush("constant", 0);
+            case "true" -> writeTrue();
+            case "this" -> writePush("pointer", 0);
+            default -> throw new IllegalStateException("Unexpected value: " + keywordConstant);
+        }
+    }
+
+    public void writeConstructorCode(int fields) {
+        writePush("constant", fields);
+        writeCall("Memory.alloc", 1);
+        writePop("pointer", 0);
+    }
+
+    private void writeTrue() {
+        writePush("constant", 0);
+        writeArithmetic("not");
     }
 }

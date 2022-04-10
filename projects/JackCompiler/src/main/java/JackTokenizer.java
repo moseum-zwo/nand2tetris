@@ -36,6 +36,9 @@ public class JackTokenizer {
             if (!currentLine.isBlank() && !blockComment) {
                 String[] words = currentLine.split(" ");
                 for (String currentWord : words) {
+                    if (currentWord.contains("\t")) {
+                        currentWord = currentWord.replace("\t", "");
+                    }
                     analyzeCurrentWord(tokens, currentWord);
                 }
             }
