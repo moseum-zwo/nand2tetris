@@ -31,4 +31,16 @@ class CompilationEngineTest {
         CompilationEngine compilationEngine = new CompilationEngine(new File("src/test/resources/outputTemp"), tokens);
         compilationEngine.writeXMLFile();
     }
+
+    @Test
+    void testCodeWriting2() throws IOException {
+        List<Token> tokens = new ArrayList<>(List.of(new Keyword("class"), new Identifier("Test"), new Symbol("{"),
+                new Keyword("field"), new Identifier("Array"), new Identifier("arr"), new Symbol(","), new Identifier("bar"), new Symbol(";"),
+                new Keyword("method"), new Keyword("void"), new Identifier("testMethod"), new Symbol("("), new Symbol(")"), new Symbol("{"),
+                new Keyword("let"), new Identifier("arr"), new Symbol("["), new IntegerConstant("2"), new Symbol("]"), new Symbol("="), new Identifier("bar"), new Symbol("["), new IntegerConstant("3"), new Symbol("]"), new Symbol(";"),
+                new Symbol("}"),
+                new Symbol("}")));
+        CompilationEngine compilationEngine = new CompilationEngine(new File("src/test/resources/outputTemp"), tokens);
+        compilationEngine.writeXMLFile();
+    }
 }

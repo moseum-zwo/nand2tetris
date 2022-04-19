@@ -473,16 +473,26 @@ public class CompilationEngine {
         //varName
         SymbolTableEntry entry = checkAndWriteIdentifierBeingUsed();
 
+        boolean isArray = false;
+
         //('[' expression ']')?
         try {
             //'['
             checkAndWriteSymbol("[");
 
+            //%%
+
+            vmWriter.writePush(entry.getKind(), entry.getIndex());
+
             //expression
             compileExpression();
 
+            vmWriter.writeArithmetic("+");
+
             //']'
             checkAndWriteSymbol("]");
+
+            isArray = true;
         } catch (UnexpectedTokenException e) {
             rollbackToken();
         }
@@ -493,9 +503,14 @@ public class CompilationEngine {
         //expression
         compileExpression();
 
+        if (isArray) {
+
+        } else {
+            vmWriter.writePop(entry.getKind(), entry.getIndex());
+        }
+
         //';'
         checkAndWriteSymbol(";");
-        vmWriter.writePop(entry.getKind(), entry.getIndex());
     }
 
     private void compileIf() {
@@ -679,9 +694,25 @@ public class CompilationEngine {
                 } else if (nextTokenPeeked.getValue().equals("[")) {    //array; varName '[' expression ']'
                     writeTokenToFileIdentifierUsed(token);
 
+                    //%%
+
+                    SymbolTableEntry entry = lookForEntryInSymbolTable(token);
+
+                    vmWriter.writePush(entry.getKind(), entry.getIndex());
+
                     checkAndWriteSymbol("[");
 
                     compileExpression();
+
+                    vmWriter.writeArithmetic("+");
+
+                    vmWriter.writePop("temp", 0);
+
+                    vmWriter.writePop("pointer", 1);
+
+                    vmWriter.writePush("temp", 0);
+
+                    vmWriter.writePop("that", 0);
 
                     checkAndWriteSymbol("]");
                 } else {        //varName; variable
