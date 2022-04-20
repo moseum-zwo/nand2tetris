@@ -493,7 +493,14 @@ public class CompilationEngine {
         compileExpression();
 
         if (isArray) {
-
+            //*(base+offset) = expression
+            //pop expression value to temp
+            vmWriter.writePop("temp", 0);
+            //pop base+index into 'that'
+            vmWriter.writePop("pointer", 1);
+            //pop expression value into *(base+index)
+            vmWriter.writePush("temp", 0);
+            vmWriter.writePop("that", 0);
         } else {
             vmWriter.writePop(entry.getKind(), entry.getIndex());
         }
@@ -704,17 +711,16 @@ public class CompilationEngine {
 
                     compileExpression();
 
+                    checkAndWriteSymbol("]");
+
+                    //base+offset
                     vmWriter.writeArithmetic("+");
 
-                    vmWriter.writePop("temp", 0);
-
+                    //pop into 'that' pointer
                     vmWriter.writePop("pointer", 1);
+                    //push *(base+index) onto stack
+                    vmWriter.writePush("that", 0);
 
-                    vmWriter.writePush("temp", 0);
-
-                    vmWriter.writePop("that", 0);
-
-                    checkAndWriteSymbol("]");
                 } else {        //varName; variable
                     SymbolTableEntry entry = writeTokenToFileIdentifierUsed(token);
                     vmWriter.writePush(entry.getKind(), entry.getIndex());
