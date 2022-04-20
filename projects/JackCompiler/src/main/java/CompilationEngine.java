@@ -260,7 +260,7 @@ public class CompilationEngine {
                 vmWriter.writePush("argument", 0);
                 vmWriter.writePop("pointer", 0);
             }
-            case "function" -> vmWriter.writePop("temp", 0);
+//            case "function" -> vmWriter.writePop("temp", 0);
         }
 
         //statements
