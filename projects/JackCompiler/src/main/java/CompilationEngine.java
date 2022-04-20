@@ -663,6 +663,17 @@ public class CompilationEngine {
             vmWriter.writePush("constant", Integer.parseInt(token.getValue()));
         } else if (token.getClass().equals(StringConstant.class)) { //string constant
             writeTokenToXMLFile(token);
+
+            String stringConstant = token.getValue();
+
+            vmWriter.writePush("constant", stringConstant.length());
+            vmWriter.writeCall("String.new", 1);
+
+            for (int i = 0; i < stringConstant.length(); i++) {
+                vmWriter.writePush("constant", stringConstant.charAt(i));
+                vmWriter.writeCall("String.appendChar", 2);
+            }
+
         } else if (token.getClass().equals(Keyword.class) &&    //keyword constant
                 (token.getValue().equals("true") || token.getValue().equals("false") || token.getValue().equals("null") || token.getValue().equals("this"))) {
             writeTokenToXMLFile(token);
