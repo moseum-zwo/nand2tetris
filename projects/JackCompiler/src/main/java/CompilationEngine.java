@@ -446,23 +446,12 @@ public class CompilationEngine {
         checkToken(statementKeyword, Keyword.class, "let", "if", "while", "do", "return");
         rollbackToken();
         switch (statementKeyword.getValue()) {
-            case "let":
-                compileLet();
-                break;
-            case "if":
-                compileIf();
-                break;
-            case "while":
-                compileWhile();
-                break;
-            case "do":
-                compileDo();
-                break;
-            case "return":
-                compileReturn();
-                break;
-            default:
-                throw new RuntimeException("Unexpected Identifier for statement");
+            case "let" -> compileLet();
+            case "if" -> compileIf();
+            case "while" -> compileWhile();
+            case "do" -> compileDo();
+            case "return" -> compileReturn();
+            default -> throw new RuntimeException("Unexpected Identifier for statement");
         }
     }
 
