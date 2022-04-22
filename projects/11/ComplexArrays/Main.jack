@@ -25,7 +25,7 @@ class Main {
         let c[0] = null;
         let c = c[0];
         
-        do Output.printString("five");
+        do Output.printString("Test 1: Expected output = 5; actual output: ");
         do Output.printInt(b[2]);
         do Output.println();
         do Output.printString("fourty");
