@@ -10,11 +10,11 @@ import java.util.NoSuchElementException;
 
 public class CompilationEngine {
 
-    private BufferedWriter xmlWriter;
+    private final BufferedWriter xmlWriter;
 
-    private VMWriter vmWriter;
+    private final VMWriter vmWriter;
 
-    private List<Token> tokens;
+    private final List<Token> tokens;
 
     private SymbolTable classSymbolTable;
 
