@@ -674,8 +674,6 @@ public class CompilationEngine {
                 } else if (nextTokenPeeked.getValue().equals("[")) {    //array; varName '[' expression ']'
                     writeTokenToFileIdentifierUsed(token);
 
-                    //%%
-
                     SymbolTableEntry entry = lookForEntryInSymbolTable(token);
 
                     vmWriter.writePush(entry.getKind(), entry.getIndex());
