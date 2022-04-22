@@ -88,7 +88,7 @@ public class VMWriter {
 
     public void writeKeywordConstant(String keywordConstant) {
         switch (keywordConstant) {
-            case "false" -> writePush("constant", 0);
+            case "false", "null" -> writePush("constant", 0);
             case "true" -> writeTrue();
             case "this" -> writePush("pointer", 0);
             default -> throw new IllegalStateException("Unexpected value: " + keywordConstant);
