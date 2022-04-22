@@ -31,6 +31,11 @@ public class SymbolTable {
         }
     }
 
+    public void addThisAsFirstEntryToSymbolTable(String type) {
+        this.entries.stream().filter(entry -> entry.getKind().equals("argument")).forEach(SymbolTableEntry::advanceIndexByOne);
+        this.entries.add(new SymbolTableEntry("this", "argument", type, 0));
+    }
+
     public SymbolTableEntry findByName(String name) throws NoSuchElementException {
         //When compiling error-free Jack code, each symbol not found in the symbol tables can be assumed to be
         // either a subroutine name or a class name.

@@ -8,7 +8,7 @@ public class SymbolTableEntry {
 
     private final String type;
 
-    private final int index;
+    private int index;
 
     public SymbolTableEntry(String name, String kind, String type, int index) {
         this.name = name;
@@ -44,5 +44,9 @@ public class SymbolTableEntry {
     @Override
     public int hashCode() {
         return Objects.hash(name);
+    }
+
+    public void advanceIndexByOne() {
+        this.index++;
     }
 }

@@ -137,32 +137,6 @@ public class CompilationEngine {
             throw new UnexpectedTokenException("No more subroutine declarations.");
         }
 
-        //basic technique for accessing object data:
-        // push 8000
-        // pop pointer 0
-        // push 17
-        // pop this 0
-
-        //constructor contract:
-        // (i) arrange memory block to store the new object,
-        // (ii) return its base address to caller (push to stack)
-
-        //How does constructor know about object size? -> consult classSymbolTable and count "field" entries.
-        // How to create space on heap?
-        // push "numOfFieldEntries"
-        // call Memory.alloc 1
-        // pop pointer 0
-
-        //initialize object:
-        // push argument 0
-        // pop this 0
-        // push argument 1
-        // pop this 1
-
-        //return this
-        // push pointer 0
-        // return
-
         //type
         checkAndWriteType("void", "int", "char", "boolean");
 
@@ -248,15 +222,8 @@ public class CompilationEngine {
                 vmWriter.writeConstructorCode(fields);
             }
             case "method" -> {
-                try {
-                    subroutineSymbolTable.addEntryToSymbolTable(new SymbolTableEntry("this",
-                            "argument",
-                            className,
-                            subroutineSymbolTable.getAndIncrementArgCounter())
-                    );
-                } catch (AlreadyInSymbolTableException e) {
-                    e.printStackTrace();
-                }
+                subroutineSymbolTable.addThisAsFirstEntryToSymbolTable(className);
+                subroutineSymbolTable.getAndIncrementArgCounter(); //just to increment counter, return value not used.
                 vmWriter.writePush("argument", 0);
                 vmWriter.writePop("pointer", 0);
             }
@@ -656,7 +623,13 @@ public class CompilationEngine {
 
         if (token.getClass().equals(IntegerConstant.class)) {  //integer constant; number
             writeTokenToXMLFile(token);
-            vmWriter.writePush("constant", Integer.parseInt(token.getValue()));
+            int integerConstant = Integer.parseInt(token.getValue());
+            if (integerConstant < 0) {
+                vmWriter.writePush("constant", Math.multiplyExact(integerConstant, -1));
+                vmWriter.writeArithmetic("neg");
+            } else {
+                vmWriter.writePush("constant", integerConstant);
+            }
         } else if (token.getClass().equals(StringConstant.class)) { //string constant
             writeTokenToXMLFile(token);
 
