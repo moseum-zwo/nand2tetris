@@ -1,0 +1,268 @@
+<tokens>
+<keyword> class </keyword>
+<identifier> Memory | kind: class; defined </identifier>
+<symbol> { </symbol>
+<keyword> static </keyword>
+<identifier> Array </identifier>
+<identifier> ram | kind: static; index: 0; defined </identifier>
+<symbol> ; </symbol>
+<keyword> static </keyword>
+<keyword> int </keyword>
+<identifier> freeList | kind: static; index: 1; defined </identifier>
+<symbol> ; </symbol>
+<keyword> static </keyword>
+<identifier> Array </identifier>
+<identifier> heap | kind: static; index: 2; defined </identifier>
+<symbol> ; </symbol>
+<keyword> function </keyword>
+<keyword> void </keyword>
+<identifier> init | kind: subroutine; defined </identifier>
+<symbol> ( </symbol>
+<symbol> ) </symbol>
+<symbol> { </symbol>
+<keyword> let </keyword>
+<identifier> ram | kind: static; index: 0; used </identifier>
+<symbol> = </symbol>
+<integerConstant> 0 </integerConstant>
+<symbol> ; </symbol>
+<keyword> let </keyword>
+<identifier> freeList | kind: static; index: 1; used </identifier>
+<symbol> = </symbol>
+<integerConstant> 2048 </integerConstant>
+<symbol> ; </symbol>
+<keyword> let </keyword>
+<identifier> heap | kind: static; index: 2; used </identifier>
+<symbol> = </symbol>
+<identifier> freeList | kind: static; index: 1; used </identifier>
+<symbol> ; </symbol>
+<keyword> let </keyword>
+<identifier> heap | kind: static; index: 2; used </identifier>
+<symbol> [ </symbol>
+<integerConstant> 0 </integerConstant>
+<symbol> ] </symbol>
+<symbol> = </symbol>
+<integerConstant> 0 </integerConstant>
+<symbol> ; </symbol>
+<keyword> let </keyword>
+<identifier> heap | kind: static; index: 2; used </identifier>
+<symbol> [ </symbol>
+<integerConstant> 1 </integerConstant>
+<symbol> ] </symbol>
+<symbol> = </symbol>
+<integerConstant> 14335 </integerConstant>
+<symbol> ; </symbol>
+<keyword> return </keyword>
+<symbol> ; </symbol>
+<symbol> } </symbol>
+<keyword> function </keyword>
+<keyword> int </keyword>
+<identifier> peek | kind: subroutine; defined </identifier>
+<symbol> ( </symbol>
+<keyword> int </keyword>
+<identifier> address | kind: argument; index: 0; defined </identifier>
+<symbol> ) </symbol>
+<symbol> { </symbol>
+<keyword> return </keyword>
+<identifier> ram | kind: static; index: 0; used </identifier>
+<symbol> [ </symbol>
+<identifier> address | kind: argument; index: 0; used </identifier>
+<symbol> ] </symbol>
+<symbol> ; </symbol>
+<symbol> } </symbol>
+<keyword> function </keyword>
+<keyword> void </keyword>
+<identifier> poke | kind: subroutine; defined </identifier>
+<symbol> ( </symbol>
+<keyword> int </keyword>
+<identifier> address | kind: argument; index: 0; defined </identifier>
+<symbol> , </symbol>
+<keyword> int </keyword>
+<identifier> value | kind: argument; index: 1; defined </identifier>
+<symbol> ) </symbol>
+<symbol> { </symbol>
+<keyword> let </keyword>
+<identifier> ram | kind: static; index: 0; used </identifier>
+<symbol> [ </symbol>
+<identifier> address | kind: argument; index: 0; used </identifier>
+<symbol> ] </symbol>
+<symbol> = </symbol>
+<identifier> value | kind: argument; index: 1; used </identifier>
+<symbol> ; </symbol>
+<keyword> return </keyword>
+<symbol> ; </symbol>
+<symbol> } </symbol>
+<keyword> function </keyword>
+<keyword> int </keyword>
+<identifier> alloc | kind: subroutine; defined </identifier>
+<symbol> ( </symbol>
+<keyword> int </keyword>
+<identifier> size | kind: argument; index: 0; defined </identifier>
+<symbol> ) </symbol>
+<symbol> { </symbol>
+<keyword> var </keyword>
+<keyword> int </keyword>
+<identifier> currentSize | kind: var; index: 0; defined </identifier>
+<symbol> ; </symbol>
+<keyword> var </keyword>
+<keyword> int </keyword>
+<identifier> block | kind: var; index: 1; defined </identifier>
+<symbol> ; </symbol>
+<keyword> let </keyword>
+<identifier> heap | kind: static; index: 2; used </identifier>
+<symbol> = </symbol>
+<identifier> freeList | kind: static; index: 1; used </identifier>
+<symbol> ; </symbol>
+<keyword> let </keyword>
+<identifier> currentSize | kind: var; index: 0; used </identifier>
+<symbol> = </symbol>
+<identifier> heap | kind: static; index: 2; used </identifier>
+<symbol> [ </symbol>
+<integerConstant> 1 </integerConstant>
+<symbol> ] </symbol>
+<symbol> ; </symbol>
+<keyword> while </keyword>
+<symbol> ( </symbol>
+<symbol> ( </symbol>
+<symbol> ~ </symbol>
+<symbol> ( </symbol>
+<identifier> heap | kind: static; index: 2; used </identifier>
+<symbol> = </symbol>
+<integerConstant> 0 </integerConstant>
+<symbol> ) </symbol>
+<symbol> ) </symbol>
+<symbol> &amp; </symbol>
+<symbol> ( </symbol>
+<identifier> currentSize | kind: var; index: 0; used </identifier>
+<symbol> &lt; </symbol>
+<symbol> ( </symbol>
+<identifier> size | kind: argument; index: 0; used </identifier>
+<symbol> + </symbol>
+<integerConstant> 2 </integerConstant>
+<symbol> ) </symbol>
+<symbol> ) </symbol>
+<symbol> ) </symbol>
+<symbol> { </symbol>
+<keyword> let </keyword>
+<identifier> heap | kind: static; index: 2; used </identifier>
+<symbol> = </symbol>
+<identifier> heap | kind: static; index: 2; used </identifier>
+<symbol> [ </symbol>
+<integerConstant> 0 </integerConstant>
+<symbol> ] </symbol>
+<symbol> ; </symbol>
+<keyword> let </keyword>
+<identifier> currentSize | kind: var; index: 0; used </identifier>
+<symbol> = </symbol>
+<identifier> heap | kind: static; index: 2; used </identifier>
+<symbol> [ </symbol>
+<integerConstant> 1 </integerConstant>
+<symbol> ] </symbol>
+<symbol> ; </symbol>
+<symbol> } </symbol>
+<keyword> if </keyword>
+<symbol> ( </symbol>
+<identifier> heap | kind: static; index: 2; used </identifier>
+<symbol> = </symbol>
+<integerConstant> 0 </integerConstant>
+<symbol> ) </symbol>
+<symbol> { </symbol>
+<keyword> do </keyword>
+<identifier> Sys </identifier>
+<symbol> . </symbol>
+<identifier> error </identifier>
+<symbol> ( </symbol>
+<integerConstant> 1 </integerConstant>
+<symbol> ) </symbol>
+<symbol> ; </symbol>
+<symbol> } </symbol>
+<keyword> let </keyword>
+<identifier> heap | kind: static; index: 2; used </identifier>
+<symbol> [ </symbol>
+<integerConstant> 1 </integerConstant>
+<symbol> ] </symbol>
+<symbol> = </symbol>
+<symbol> ( </symbol>
+<identifier> currentSize | kind: var; index: 0; used </identifier>
+<symbol> - </symbol>
+<identifier> size | kind: argument; index: 0; used </identifier>
+<symbol> - </symbol>
+<integerConstant> 2 </integerConstant>
+<symbol> ) </symbol>
+<symbol> ; </symbol>
+<keyword> let </keyword>
+<identifier> block | kind: var; index: 1; used </identifier>
+<symbol> = </symbol>
+<symbol> ( </symbol>
+<symbol> ( </symbol>
+<identifier> heap | kind: static; index: 2; used </identifier>
+<symbol> + </symbol>
+<identifier> currentSize | kind: var; index: 0; used </identifier>
+<symbol> + </symbol>
+<integerConstant> 2 </integerConstant>
+<symbol> ) </symbol>
+<symbol> - </symbol>
+<identifier> size | kind: argument; index: 0; used </identifier>
+<symbol> ) </symbol>
+<symbol> ; </symbol>
+<keyword> let </keyword>
+<identifier> heap | kind: static; index: 2; used </identifier>
+<symbol> = </symbol>
+<symbol> ( </symbol>
+<identifier> block | kind: var; index: 1; used </identifier>
+<symbol> - </symbol>
+<integerConstant> 2 </integerConstant>
+<symbol> ) </symbol>
+<symbol> ; </symbol>
+<keyword> let </keyword>
+<identifier> heap | kind: static; index: 2; used </identifier>
+<symbol> [ </symbol>
+<integerConstant> 0 </integerConstant>
+<symbol> ] </symbol>
+<symbol> = </symbol>
+<integerConstant> 0 </integerConstant>
+<symbol> ; </symbol>
+<keyword> let </keyword>
+<identifier> heap | kind: static; index: 2; used </identifier>
+<symbol> [ </symbol>
+<integerConstant> 1 </integerConstant>
+<symbol> ] </symbol>
+<symbol> = </symbol>
+<identifier> size | kind: argument; index: 0; used </identifier>
+<symbol> ; </symbol>
+<keyword> return </keyword>
+<identifier> block | kind: var; index: 1; used </identifier>
+<symbol> ; </symbol>
+<symbol> } </symbol>
+<keyword> function </keyword>
+<keyword> void </keyword>
+<identifier> deAlloc | kind: subroutine; defined </identifier>
+<symbol> ( </symbol>
+<identifier> Array </identifier>
+<identifier> o | kind: argument; index: 0; defined </identifier>
+<symbol> ) </symbol>
+<symbol> { </symbol>
+<keyword> let </keyword>
+<identifier> heap | kind: static; index: 2; used </identifier>
+<symbol> = </symbol>
+<identifier> o | kind: argument; index: 0; used </identifier>
+<symbol> - </symbol>
+<integerConstant> 2 </integerConstant>
+<symbol> ; </symbol>
+<keyword> let </keyword>
+<identifier> heap | kind: static; index: 2; used </identifier>
+<symbol> [ </symbol>
+<integerConstant> 0 </integerConstant>
+<symbol> ] </symbol>
+<symbol> = </symbol>
+<identifier> freeList | kind: static; index: 1; used </identifier>
+<symbol> ; </symbol>
+<keyword> let </keyword>
+<identifier> freeList | kind: static; index: 1; used </identifier>
+<symbol> = </symbol>
+<identifier> heap | kind: static; index: 2; used </identifier>
+<symbol> ; </symbol>
+<keyword> return </keyword>
+<symbol> ; </symbol>
+<symbol> } </symbol>
+<symbol> } </symbol>
+</tokens>
